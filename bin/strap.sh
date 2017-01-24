@@ -177,22 +177,40 @@ if ! git config push.default >/dev/null; then
   git config --global push.default simple
 fi
 
-# Setup GitHub HTTPS credentials.
-if git credential-osxkeychain 2>&1 | grep $Q "git.credential-osxkeychain"
-then
-  if [ "$(git config --global credential.helper)" != "osxkeychain" ]
-  then
-    git config --global credential.helper osxkeychain
-  fi
+# Setup GitHub authentication. Defaults to HTTPS.
+STRAP_GITHUB_AUTH="${STRAP_GITHUB_AUTH:-https}"
 
-  if [ -n "$STRAP_GITHUB_USER" ] && [ -n "$STRAP_GITHUB_TOKEN" ]
+if [ "$STRAP_GITHUB_AUTH" = "https" ]
+then
+  if git credential-osxkeychain 2>&1 | grep $Q "git.credential-osxkeychain"
   then
-    printf "protocol=https\nhost=github.com\n" | git credential-osxkeychain erase
-    printf "protocol=https\nhost=github.com\nusername=%s\npassword=%s\n" \
-          "$STRAP_GITHUB_USER" "$STRAP_GITHUB_TOKEN" \
-          | git credential-osxkeychain store
+    if [ "$(git config --global credential.helper)" != "osxkeychain" ]
+    then
+      git config --global credential.helper osxkeychain
+    fi
+
+    if [ -n "$STRAP_GITHUB_USER" ] && [ -n "$STRAP_GITHUB_TOKEN" ]
+    then
+      printf "protocol=https\nhost=github.com\n" | git credential-osxkeychain erase
+      printf "protocol=https\nhost=github.com\nusername=%s\npassword=%s\n" \
+        "$STRAP_GITHUB_USER" "$STRAP_GITHUB_TOKEN" \
+        | git credential-osxkeychain store
+    fi
   fi
+elif [ "$STRAP_GITHUB_AUTH" = "ssh" ]
+then
+  echo
+  log "Using SSH. Checking credentials:"
+  if ! ssh -T -p 443 git@ssh.github.com 2>&1 | grep $Q "$STRAP_GITHUB_USER"
+  then
+    echo
+    abort "SSH failed. See https://help.github.com/articles/connecting-to-github-with-ssh."
+  fi
+else
+  echo
+  abort "Setting up $STRAP_GITHUB_AUTH for authentication is not supported"
 fi
+
 logk
 
 # Setup Homebrew directory and permissions.
