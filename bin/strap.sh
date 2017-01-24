@@ -289,17 +289,17 @@ if [ -n "$STRAP_GITHUB_USER" ]; then
 
   if git ls-remote "$DOTFILES_URL" &>/dev/null; then
     log "Fetching $STRAP_GITHUB_USER/dotfiles from GitHub:"
-    if [ ! -d "$HOME/.dotfiles" ]; then
-      log "Cloning to ~/.dotfiles:"
-      git clone $Q "$DOTFILES_URL" ~/.dotfiles
+    if [ ! -d "$HOME/.files" ]; then
+      log "Cloning to ~/.files:"
+      git clone $Q "$DOTFILES_URL" ~/.files
     else
       (
-        cd ~/.dotfiles
+        cd ~/.files
         git pull $Q --rebase --autostash
       )
     fi
     (
-      cd ~/.dotfiles
+      cd ~/.files
       for i in script/setup script/bootstrap; do
         if [ -f "$i" ] && [ -x "$i" ]; then
           log "Running dotfiles $i:"
